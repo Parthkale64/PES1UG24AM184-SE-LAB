@@ -14,6 +14,11 @@ class Target:
         self.color = color
 
     def get_bounding_rect(self):
-        """A square bounding box around the circle - NOT the same
-        shape as the actual circle, and easy to build incorrectly."""
-        return pygame.Rect(self.x, self.y, self.radius * 2, self.radius * 2)
+        """A square bounding box around the circle."""
+        # Offset the top-left corner by the radius so (x,y) remains the center
+        return pygame.Rect(
+            self.x - self.radius, 
+            self.y - self.radius, 
+            self.radius * 2, 
+            self.radius * 2
+        )
