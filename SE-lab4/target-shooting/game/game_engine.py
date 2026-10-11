@@ -37,7 +37,9 @@ class GameEngine:
             self.misses += 1
 
     def update(self):
-        pass
+        """Updates game state every frame."""
+        for target in self.targets:
+            target.move(WIDTH, HEIGHT)
 
     def draw(self, surface, font):
         from game import renderer
