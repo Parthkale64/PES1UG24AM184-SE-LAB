@@ -6,6 +6,7 @@ from pathlib import Path
 class_capacity = {"Yoga": 3, "HIIT": 2, "Spin": 4}
 rosters = {}
 
+
 def book_class(member_id, class_name, attendance_log=None):
     """Book one seat and optionally record the successful booking."""
     if class_name not in class_capacity:
@@ -20,12 +21,14 @@ def book_class(member_id, class_name, attendance_log=None):
         attendance_log.append(f"{member_id} -> {class_name}")
     return True
 
+
 def cancel_booking(member_id, class_name):
     """Remove a booking if the member is on the class roster."""
     try:
         rosters[class_name].remove(member_id)
     except (KeyError, ValueError):
         print("Nothing to cancel")
+
 
 def set_capacity(class_name, seats):
     """Set a nonnegative integer capacity that covers existing bookings."""
@@ -35,19 +38,22 @@ def set_capacity(class_name, seats):
         return
     class_capacity[class_name] = seats
 
+
 def add_members(class_name, count):
     """Book walk-in guests until the requested count or capacity is reached."""
     for index in range(count):
         if not book_class(f"GUEST-{index}", class_name):
             break
 
+
 def export_roster(file="gym_schedule.json"):
     """Write the current rosters to a UTF-8 JSON file."""
     with open(file, "w", encoding="utf-8") as schedule:
         json.dump(rosters, schedule)
 
+
 def clear_old_exports(prefix="old_"):
-    """Remove local JSON exports whose filenames start with a literal prefix."""
+    """Remove local JSON exports matching the literal filename prefix."""
     if not prefix:
         raise ValueError("An export prefix is required")
     for entry in Path.cwd().iterdir():
@@ -55,10 +61,12 @@ def clear_old_exports(prefix="old_"):
             if entry.is_file() or entry.is_symlink():
                 entry.unlink(missing_ok=True)
 
+
 def show_rosters():
     """Print each class and the members attending it."""
     for class_name, members in rosters.items():
         print(class_name, ":", ", ".join(map(str, members)))
+
 
 def main():
     """Run a sample booking session and export the resulting schedule."""
@@ -83,6 +91,7 @@ def main():
     clear_old_exports()
     export_roster()
     show_rosters()
+
 
 if __name__ == "__main__":
     main()
