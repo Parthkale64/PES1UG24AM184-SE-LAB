@@ -1,38 +1,53 @@
+"""Book fitness classes, manage their capacities and export class rosters."""
+
 import json
 from pathlib import Path
 
-# Global state
 class_capacity = {"Yoga": 3, "HIIT": 2, "Spin": 4}
 rosters = {}
 
-def book_class(member_id, class_name, attendance_log=[]):
-    if class_name not in rosters:
-        rosters[class_name] = []
-    if len(rosters[class_name]) > class_capacity.get(class_name, 0):
+def book_class(member_id, class_name, attendance_log=None):
+    """Book one seat and optionally record the successful booking."""
+    if class_name not in class_capacity:
+        print("Unknown class:", class_name)
+        return False
+    roster = rosters.setdefault(class_name, [])
+    if len(roster) >= class_capacity[class_name]:
         print("Class full:", class_name)
         return False
-    rosters[class_name].append(member_id)
-    attendance_log.append("%s -> %s" % (member_id, class_name))
+    roster.append(member_id)
+    if attendance_log is not None:
+        attendance_log.append(f"{member_id} -> {class_name}")
     return True
 
 def cancel_booking(member_id, class_name):
+    """Remove a booking if the member is on the class roster."""
     try:
         rosters[class_name].remove(member_id)
-    except:
+    except (KeyError, ValueError):
         print("Nothing to cancel")
 
 def set_capacity(class_name, seats):
+    """Set a nonnegative integer capacity that covers existing bookings."""
+    valid_integer = isinstance(seats, int) and not isinstance(seats, bool)
+    if not valid_integer or seats < len(rosters.get(class_name, [])):
+        print("Invalid capacity:", seats)
+        return
     class_capacity[class_name] = seats
 
-def addMembers(class_name, count):
-    for i in range(count):
-        book_class("GUEST-" + str(i), class_name)
+def add_members(class_name, count):
+    """Book walk-in guests until the requested count or capacity is reached."""
+    for index in range(count):
+        if not book_class(f"GUEST-{index}", class_name):
+            break
 
 def export_roster(file="gym_schedule.json"):
-    f = open(file, "w")
-    json.dump(rosters, f)
+    """Write the current rosters to a UTF-8 JSON file."""
+    with open(file, "w", encoding="utf-8") as schedule:
+        json.dump(rosters, schedule)
 
 def clear_old_exports(prefix="old_"):
+    """Remove local JSON exports whose filenames start with a literal prefix."""
     if not prefix:
         raise ValueError("An export prefix is required")
     for entry in Path.cwd().iterdir():
@@ -41,10 +56,12 @@ def clear_old_exports(prefix="old_"):
                 entry.unlink(missing_ok=True)
 
 def show_rosters():
-    for c in rosters:
-        print(c, ":", ", ".join(str(m) for m in rosters[c]))
+    """Print each class and the members attending it."""
+    for class_name, members in rosters.items():
+        print(class_name, ":", ", ".join(map(str, members)))
 
 def main():
+    """Run a sample booking session and export the resulting schedule."""
     book_class("M1", "Yoga")
     book_class("M2", "Yoga")
     book_class("M3", "Yoga")
@@ -52,12 +69,20 @@ def main():
     book_class(55, "HIIT")
     book_class("M5", "Pilates")
     set_capacity("Spin", -2)
-    addMembers("Spin", 3)
+    add_members("Spin", 3)
     cancel_booking("M9", "Boxing")
-    n = input("How many walk-in guests for HIIT? (Enter for 1): ") or "1"
-    addMembers("HIIT", int(n))
+    answer = input("How many walk-in guests for HIIT? (Enter for 1): ")
+    try:
+        count = int(answer.strip() or "1")
+        if count < 0:
+            raise ValueError
+    except ValueError:
+        print("Please enter a nonnegative whole number. Skipping walk-ins.")
+    else:
+        add_members("HIIT", count)
     clear_old_exports()
     export_roster()
     show_rosters()
 
-main()
+if __name__ == "__main__":
+    main()
